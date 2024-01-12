@@ -28,15 +28,15 @@ spec:
 {{ toYaml .Values.podAnnotations | indent 8 }}
         {{- end }}
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: lifecycle
-                operator: In
-                values:
-                - ondemand
+      # affinity:
+      #   nodeAffinity:
+      #     requiredDuringSchedulingIgnoredDuringExecution:
+      #       nodeSelectorTerms:
+      #       - matchExpressions:
+      #         - key: lifecycle
+      #           operator: In
+      #           values:
+      #           - ondemand
 {{- if .Values.ipForwardInitContainer }}
       initContainers:
         - args:
@@ -95,7 +95,7 @@ spec:
             memory: "{{ .Values.resources.limits.memory }}"
         env:
         - name: EASYRSA_CERT_EXPIRE
-          value: "3650"
+          value: "{{ .Values.openvpn.OVPN_CERT_EXPIRATION }}"
         volumeMounts:
           - mountPath: /etc/openvpn/setup
             name: openvpn
@@ -124,7 +124,7 @@ spec:
       - name: certs
         {{- if .Values.persistence.enabled }}
         persistentVolumeClaim:
-          claimName: {{ if .Values.persistence.existingClaim }}{{ .Values.persistence.existingClaim }}{{- else }}{{ template "openvpn.fullname" . }}{{- end }}
+          claimName: {{ if .Values.persistence.existingClaim }}{{ .Values.persistence.existingClaim }}{{- else }}{{ template "openvpn.fullname" . }}-pvc{{- end }}
         {{- else if .Values.openvpn.keystoreSecret }}
         secret:
           secretName: "{{ .Values.openvpn.keystoreSecret }}"

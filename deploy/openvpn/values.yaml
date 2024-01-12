@@ -15,8 +15,8 @@ image:
   pullPolicy: IfNotPresent
 service:
   type: LoadBalancer
-  externalPort: 443
-  internalPort: 443
+  externalPort: 1194
+  internalPort: 1194
   # hostPort: 443
   externalIPs: []
   # clusterIP: None
@@ -26,7 +26,10 @@ service:
   ## Here annotations can be added to the openvpn service
   # annotations:
   #   external-dns.alpha.kubernetes.io/hostname: vpn.example.com
-  annotations: {}
+  # annotations needed for static IP
+  annotations:
+      service.beta.kubernetes.io/azure-load-balancer-resource-group: MC_ZPUE-DNT-rg_az_k8s_1_northeurope
+      service.beta.kubernetes.io/azure-pip-name: influx_public_ip
 ## Here annotations can be added to the openvpn pod
 # podAnnotations:
 #   backup.ark.heptio.com/backup-volumes: certs
@@ -45,7 +48,7 @@ resources:
 
 readinessProbe:
   initialDelaySeconds: 5
-  periodSeconds: 5
+  periodSeconds: 10
   successThreshold: 2
 
 persistence:
@@ -63,25 +66,32 @@ persistence:
   ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
   ##   GKE, AWS & OpenStack)
   ##
-  # storageClass: "-"
+  useCustomStorageClass: true
+  storageClass: openvpn-managed-premium-retain
   accessMode: ReadWriteOnce
-  size: 2M
+  size: 100Mi
+  provisioner: disk.csi.azure.com
+  skuName: Premium_LRS
 openvpn:
   # Network allocated for openvpn clients (default: 10.240.0.0).
-  OVPN_NETWORK: 10.240.0.0
+  OVPN_NETWORK: 10.2.0.0
   # Network subnet allocated for openvpn client (default: 255.255.0.0).
   OVPN_SUBNET: 255.255.0.0
   # Protocol used by openvpn tcp or udp (default: udp).
   OVPN_PROTO: tcp
+  # CERT expiration
+  OVPN_CERT_EXPIRATION: 36500
   # Kubernetes pod network (optional).
-  OVPN_K8S_POD_NETWORK: "100.66.0.0"
+  # OVPN_K8S_POD_NETWORK: "100.66.0.0"
+  OVPN_K8S_POD_NETWORK: "null"
   # Kubernetes pod network subnet (optional).
-  OVPN_K8S_POD_SUBNET: "255.255.128.0"
+  # OVPN_K8S_POD_SUBNET: "255.255.128.0"
+  OVPN_K8S_POD_SUBNET: "null"
   # Kubernetes service network (optional).
   # Define openvpn.OVPN_K8S_SVC_NETWORK and openvpn.OVPN_K8S_SVC_SUBNET if it's needed to create a separate route to Kubernates service subnet
-  OVPN_K8S_SVC_NETWORK: "100.76.0.0"
+  # OVPN_K8S_SVC_NETWORK: "100.76.0.0"
   # Kubernetes service network subnet (optional).
-  OVPN_K8S_SVC_SUBNET: "255.255.192.0"
+  # OVPN_K8S_SVC_SUBNET: "255.255.192.0"
   # Set default route which openvpn figures basing on network routes inside openvpn pod
   DEFAULT_ROUTE_ENABLED: true
   # Server certificate data
@@ -102,9 +112,8 @@ openvpn:
   # Lines appended to the end of the server configuration file
   #  max-clients 100
   serverConf: |
-    push "route 172.22.0.0 255.255.0.0"
-    push "route 169.254.20.10 255.255.255.255"
-    duplicate-cn
+    # duplicate-cn
+    max-clients 100000
 
   management:
     enabled: true
@@ -121,7 +130,7 @@ openvpn:
 
   # Enable CCD support
   ccd:
-    enabled: false
+    enabled: true
     config: {}
     # johndoe: "ifconfig-push 10.240.100.10 10.240.100.11"
     # janedoe: "ifconfig-push 10.240.100.20 10.240.100.21"

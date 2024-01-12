@@ -1,0 +1,12 @@
+{{- if and .Values.persistence.enabled (not .Values.persistence.existingClaim) .Values.persistence.useCustomStorageClass}}
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: {{ .Values.persistence.storageClass | quote }}
+provisioner: {{ .Values.persistence.provisioner | quote }}
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+parameters:
+  skuName: {{ .Values.persistence.skuName | quote }}
+{{- end }}
