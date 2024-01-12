@@ -18,8 +18,7 @@ Please be aware that certificate generation is variable and may take some time (
 Check pod status, replacing `$HELM_RELEASE` with the name of your release, via:
 
 ```bash
-POD_NAME=$(kubectl get pods -l "app=openvpn,release=openvpn" -n "openvpn" -o jsonpath='{.items[0].metadata.name}') \
-&& kubectl logs "$POD_NAME" --follow -n "openvpn"
+POD_NAME=$(kubectl get pods --namespace "openvpn" -l app=openvpn -o jsonpath='{ .items[0].metadata.name }') && kubectl --namespace "openvpn" logs $POD_NAME --follow
 ```
 
 When all components of the openvpn chart have started use the following script to generate a client key:
